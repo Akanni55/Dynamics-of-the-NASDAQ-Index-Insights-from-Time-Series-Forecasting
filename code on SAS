@@ -1,0 +1,74 @@
+/* Display the content of the DATA */
+proc contents data=NASDAQ_DATA;
+run;
+
+/* Print the first 10 observations to check the data */
+proc print data=NASDAQ_DATA(obs=10);
+run;
+
+/* Plotting the original time series data */
+proc sgplot data=NASDAQ_DATA;
+    series x=date y=index_value1 / markers;
+    xaxis valuesformat=date9. label='Date';
+    yaxis label='Index Value';
+    title 'NASDAQ Stock Market Index Time Series';
+run;
+
+/* Checking for Stationarity with Augmented Dickey-Fuller (ADF) test */
+proc autoreg data=NASDAQ_DATA;
+    model index_value1 = / stationarity=(adf);
+run;
+
+/* Since the ADF test indicates non-stationarity, applying differencing */
+data NASDAQ_DIFF;
+    set NASDAQ_DATA;
+    index_value1_diff = dif(index_value1); /* First-order difference */
+run;
+
+/* Plotting the differenced time series data */
+proc sgplot data=NASDAQ_DIFF;
+    series x=date y=index_value1_diff / markers;
+    xaxis valuesformat=date9. label='Date';
+    yaxis label='Differenced Index Value';
+    title 'Differenced NASDAQ Stock Market Index Time Series';
+run;
+
+/* Fitting an ARIMA(1,1,1) model to the original NASDAQ data */
+proc arima data=NASDAQ_DATA;
+    identify var=index_value1(1); /* (1) indicates first-order differencing */
+    estimate p=1 q=1; /* p=1 for AR(1) term, q=1 for MA(1) term */
+    forecast out=ARIMA_Forecast lead=12 id=date interval=month; /* Forecasting 12 months ahead */
+run;
+
+/* Reviewing Forecasts */
+proc sgplot data=ARIMA_Forecast;
+    series x=date y=Forecast / markers lineattrs=(color=blue) legendlabel="Forecast";
+    xaxis label="Date";
+    yaxis label="NASDAQ Index Value";
+    title "NASDAQ Index Forecast with ARIMA(1,1,1)";
+run;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
